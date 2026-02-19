@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="GestureControl — Touchless screen control using hand gestures. Navigate, click, scroll, swipe and drag without touching the screen.">
+    <title>GestureControl — Touchless Screen Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <!-- Trail Canvas -->
+    <canvas id="trail-canvas"></canvas>
+
+    <!-- Gesture Cursor -->
+    <div class="gesture-cursor" id="gesture-cursor">
+        <div class="cursor-ring" id="cursor-ring"></div>
+        <div class="cursor-dot"></div>
+        <span class="cursor-label" id="cursor-label">No hand</span>
+    </div>
+
+    <!-- ─── App Layout ──────────────────────────────── -->
+    <div class="app-layout">
+
+        <!-- ═══ Sidebar ═══ -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🖐️</div>
+                <div>
+                    <h1>GestureControl</h1>
+                    <small>Touchless Screen Control</small>
+                </div>
+            </div>
+
+            <!-- Mini Webcam -->
+            <div class="mini-webcam-container">
+                <video id="mini-webcam" autoplay playsinline muted></video>
+                <canvas id="mini-overlay"></canvas>
+            </div>
+
+            <div class="cam-controls">
+                <button class="btn btn-primary gc-interactive" id="startBtn" data-label="Start Camera">▶ Start</button>
+            </div>
+
+            <!-- Current Gesture -->
+            <div class="gesture-info">
+                <div class="gesture-display">
+                    <span class="gi-icon" id="gesture-icon">✋</span>
+                    <div>
+                        <div class="gi-name" id="gesture-name">Idle</div>
+                        <div class="gi-hint">Move your hand to begin</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Ready</span>
+                <span class="fps-badge" id="fps">0 FPS</span>
+            </div>
+
+            <!-- Gesture Guide -->
+            <div class="gesture-guide">
+                <h3>Gesture Guide</h3>
+
+                <div class="guide-row">
+                    <span class="guide-icon">☝️</span>
+                    <div>
+                        <div class="guide-action">Point — Move Cursor</div>
+                        <div class="guide-how">Extend index finger</div>
+                    </div>
+                </div>
+
+                <div class="guide-row">
+                    <span class="guide-icon">🤏</span>
+                    <div>
+                        <div class="guide-action">Pinch — Air Click</div>
+                        <div class="guide-how">Touch thumb + index tips</div>
+                    </div>
+                </div>
+
+                <div class="guide-row">
+                    <span class="guide-icon">🖐️</span>
+                    <div>
+                        <div class="guide-action">Open Palm — Scroll</div>
+                        <div class="guide-how">Hand open, move up/down</div>
+                    </div>
+                </div>
+
+                <div class="guide-row">
+                    <span class="guide-icon">✊</span>
+                    <div>
+                        <div class="guide-action">Fist — Grab & Drag</div>
+                        <div class="guide-how">Close fist to grab, move to drag</div>
+                    </div>
+                </div>
+
+                <div class="guide-row">
+                    <span class="guide-icon">👋</span>
+                    <div>
+                        <div class="guide-action">Quick Sweep — Swipe</div>
+                        <div class="guide-how">Fast horizontal hand motion</div>
+                    </div>
+                </div>
+
+                <div class="guide-row">
+                    <span class="guide-icon">🫰</span>
+                    <div>
+                        <div class="guide-action">Hover Dwell — Auto Click</div>
+                        <div class="guide-how">Hold cursor on element 1.2s</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══ Top Bar ═══ -->
+        <div class="topbar">
+            <div class="page-dots">
+                <div class="page-dot active gc-interactive" data-label="Page 1"></div>
+                <div class="page-dot gc-interactive" data-label="Page 2"></div>
+                <div class="page-dot gc-interactive" data-label="Page 3"></div>
+            </div>
+            <span class="topbar-title">Interactive Demo — Swipe to Navigate</span>
+            <span class="topbar-hint">👋 Swipe Left/Right to change pages</span>
+        </div>
+
+        <!-- ═══ Demo Content ═══ -->
+        <div class="demo-content" id="demo-content">
+
+            <!-- ──── PAGE 1: Interactive Widgets ──── -->
+            <div class="demo-page active" id="page-1">
+                <h2 class="page-title">Interactive Widgets</h2>
+                <p class="page-subtitle">Air-click, toggle, and interact — no touch needed!</p>
+
+                <div class="widget-grid">
+
+                    <!-- Counter -->
+                    <div class="widget counter-card">
+                        <h3>🔢 Counter</h3>
+                        <div class="counter-value">0</div>
+                        <div class="counter-buttons">
+                            <button class="counter-btn gc-interactive" data-action="decrement"
+                                data-label="Decrease">−</button>
+                            <button class="counter-btn gc-interactive" data-action="increment"
+                                data-label="Increase">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Color Picker -->
+                    <div class="widget">
+                        <h3>🎨 Color Theme</h3>
+                        <div class="color-grid">
+                            <div class="color-card gc-interactive" data-color="rgba(123,97,255,0.15)"
+                                data-label="Purple" style="background:linear-gradient(135deg,#7b61ff,#a855f7)">Purple
+                            </div>
+                            <div class="color-card gc-interactive" data-color="rgba(0,245,212,0.15)" data-label="Cyan"
+                                style="background:linear-gradient(135deg,#00f5d4,#00b4d8)">Cyan</div>
+                            <div class="color-card gc-interactive" data-color="rgba(255,107,157,0.15)" data-label="Pink"
+                                style="background:linear-gradient(135deg,#ff6b9d,#ff5252)">Pink</div>
+                            <div class="color-card gc-interactive" data-color="rgba(255,217,61,0.15)" data-label="Gold"
+                                style="background:linear-gradient(135deg,#ffd93d,#ff9f1c)">Gold</div>
+                        </div>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="widget">
+                        <h3>⚡ Settings</h3>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Dark Mode</span>
+                            <div class="demo-toggle gc-interactive on" data-label="Dark Mode"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Sound Effects</span>
+                            <div class="demo-toggle gc-interactive on" data-label="Sound Effects"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Haptic Feedback</span>
+                            <div class="demo-toggle gc-interactive" data-label="Haptic Feedback"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Notifications</span>
+                            <div class="demo-toggle gc-interactive" data-label="Notifications"></div>
+                        </div>
+                    </div>
+
+                    <!-- Music Player -->
+                    <div class="widget">
+                        <h3>🎵 Now Playing</h3>
+                        <div class="music-player">
+                            <div class="music-art">🎧</div>
+                            <div class="music-info">
+                                <div class="music-title">Midnight Groove</div>
+                                <div class="music-artist">Neon Pulse</div>
+                            </div>
+                            <button class="play-btn gc-interactive" id="play-btn" data-label="Play/Pause">▶</button>
+                        </div>
+                        <div class="gc-slider gc-interactive" data-label="Volume" style="margin-top:16px">
+                            <div class="gc-slider-fill"></div>
+                            <div class="gc-slider-thumb"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text3)">
+                            <span>Volume</span>
+                            <span>40%</span>
+                        </div>
+                    </div>
+
+                    <!-- Brightness Slider -->
+                    <div class="widget">
+                        <h3>☀️ Brightness</h3>
+                        <div class="gc-slider gc-interactive" data-label="Brightness" style="margin-top:8px">
+                            <div class="gc-slider-fill" style="width:60%"></div>
+                            <div class="gc-slider-thumb" style="left:60%"></div>
+                        </div>
+                        <div style="text-align:center; font-size:13px; color:var(--text2); margin-top:8px;">60%</div>
+                    </div>
+
+                    <!-- Info Card -->
+                    <div class="widget info-card">
+                        <div class="info-icon">🚀</div>
+                        <div class="info-value">42ms</div>
+                        <div class="info-label">Avg Latency</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ──── PAGE 2: Gallery ──── -->
+            <div class="demo-page" id="page-2">
+                <h2 class="page-title">Drag & Drop Gallery</h2>
+                <p class="page-subtitle">Grab cards with a fist ✊ and drag them around!</p>
+
+                <div class="gallery-grid">
+                    <div class="gallery-card gc-draggable gc-interactive" data-label="Mountains">
+                        <div class="gallery-bg" style="background:linear-gradient(135deg,#1a1a3e,#4a00e0)">🏔️</div>
+                        <div class="gallery-label">Mountains</div>
+                    </div>
+                    <div class="gallery-card gc-draggable gc-interactive" data-label="Ocean">
+                        <div class="gallery-bg" style="background:linear-gradient(135deg,#0c2461,#00b4d8)">🌊</div>
+                        <div class="gallery-label">Ocean</div>
+                    </div>
+                    <div class="gallery-card gc-draggable gc-interactive" data-label="Forest">
+                        <div class="gallery-bg" style="background:linear-gradient(135deg,#0a3d24,#00e676)">🌲</div>
+                        <div class="gallery-label">Forest</div>
+                    </div>
+                    <div class="gallery-card gc-draggable gc-interactive" data-label="Sunset">
+                        <div class="gallery-bg" style="background:linear-gradient(135deg,#6b2f00,#ff9f1c)">🌅</div>
+                        <div class="gallery-label">Sunset</div>
+                    </div>
+                    <div class="gallery-card gc-draggable gc-interactive" data-label="Space">
+                        <div class="gallery-bg" style="background:linear-gradient(135deg,#0d0d2b,#7b61ff)">🚀</div>
+                        <div class="gallery-label">Space</div>
+                    </div>
+                    <div class="gallery-card gc-draggable gc-interactive" data-label="City">
+                        <div class="gallery-bg" style="background:linear-gradient(135deg,#1a1a2e,#ff6b9d)">🏙️</div>
+                        <div class="gallery-label">City Night</div>
+                    </div>
+                </div>
+
+                <div class="widget-grid" style="margin-top:24px">
+                    <div class="widget gc-draggable gc-interactive" data-label="Draggable Note"
+                        style="background:rgba(123,97,255,0.1); border-color:rgba(123,97,255,0.2)">
+                        <h3>📝 Sticky Note</h3>
+                        <p style="font-size:13px; color:var(--text2)">I'm draggable! Grab me with a fist gesture and
+                            move me around the screen.</p>
+                    </div>
+                    <div class="widget gc-draggable gc-interactive" data-label="Draggable Task"
+                        style="background:rgba(0,245,212,0.05); border-color:rgba(0,245,212,0.15)">
+                        <h3>✅ Task Card</h3>
+                        <p style="font-size:13px; color:var(--text2)">Drag me to reorganize! Touchless productivity at
+                            its finest.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ──── PAGE 3: About & Stats ──── -->
+            <div class="demo-page" id="page-3">
+                <h2 class="page-title">How It Works</h2>
+                <p class="page-subtitle">Powered by MediaPipe Hands — real-time 21-point hand tracking</p>
+
+                <div class="widget-grid">
+                    <div class="widget info-card gc-interactive" data-label="Hand Landmarks">
+                        <div class="info-icon">🤚</div>
+                        <div class="info-value">21</div>
+                        <div class="info-label">Hand Landmarks Tracked</div>
+                    </div>
+                    <div class="widget info-card gc-interactive" data-label="Gestures">
+                        <div class="info-icon">🎯</div>
+                        <div class="info-value">6</div>
+                        <div class="info-label">Gesture Types</div>
+                    </div>
+                    <div class="widget info-card gc-interactive" data-label="Latency">
+                        <div class="info-icon">⚡</div>
+                        <div class="info-value">&lt;50ms</div>
+                        <div class="info-label">Processing Latency</div>
+                    </div>
+                    <div class="widget info-card gc-interactive" data-label="Model">
+                        <div class="info-icon">🧠</div>
+                        <div class="info-value">ML</div>
+                        <div class="info-label">On-Device AI Model</div>
+                    </div>
+                </div>
+
+                <div class="widget" style="margin-top:16px">
+                    <h3>🛠️ Technology Stack</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px">
+                        <div class="guide-row">
+                            <span class="guide-icon">📷</span>
+                            <div>
+                                <div class="guide-action">MediaPipe Hands</div>
+                                <div class="guide-how">Real-time hand pose estimation</div>
+                            </div>
+                        </div>
+                        <div class="guide-row">
+                            <span class="guide-icon">🧮</span>
+                            <div>
+                                <div class="guide-action">Geometric Analysis</div>
+                                <div class="guide-how">Joint angles, distances, states</div>
+                            </div>
+                        </div>
+                        <div class="guide-row">
+                            <span class="guide-icon">🎨</span>
+                            <div>
+                                <div class="guide-action">Canvas API</div>
+                                <div class="guide-how">Cursor rendering & trails</div>
+                            </div>
+                        </div>
+                        <div class="guide-row">
+                            <span class="guide-icon">🔊</span>
+                            <div>
+                                <div class="guide-action">Web Audio API</div>
+                                <div class="guide-how">Click feedback sounds</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget gc-interactive" data-label="Credits" style="margin-top:16px; text-align:center">
+                    <h3 style="justify-content:center">✨ GestureControl</h3>
+                    <p style="font-size:13px; color:var(--text2); margin-top:8px">
+                        Built with MediaPipe Hands for real-time 21-point hand tracking.<br>
+                        No touch. No mouse. Just your hand.
+                    </p>
+                    <p style="font-size:11px; color:var(--text3); margin-top:12px">
+                        Pinch to click • Open palm to scroll • Fist to grab • Swipe to navigate
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="gesture-engine.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
