@@ -1,0 +1,1012 @@
+/* ────────────────────────────────────────────────────────
+   GestureControl — Touchless Screen Control Theme
+   ──────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+    --bg: #060611;
+    --bg2: #0a0a20;
+    --card: rgba(14, 14, 42, 0.8);
+    --card-hover: rgba(22, 22, 55, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.07);
+    --glass-hover: rgba(255, 255, 255, 0.12);
+    --text: #eef;
+    --text2: #88a;
+    --text3: #556;
+    --cyan: #00f5d4;
+    --purple: #7b61ff;
+    --pink: #ff6b9d;
+    --yellow: #ffd93d;
+    --green: #00e676;
+    --red: #ff5252;
+    --orange: #ff9f1c;
+    --blue: #00b4d8;
+    --grad1: linear-gradient(135deg, #00f5d4, #7b61ff);
+    --grad2: linear-gradient(135deg, #ff6b9d, #ffd93d);
+    --radius: 16px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* Only hide real cursor when gesture tracking is active */
+body.tracking,
+body.tracking * {
+    cursor: none !important;
+}
+
+/* ─── Ambient BG ─────────────────────────────────────── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 20% 40%, rgba(123, 97, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(0, 245, 212, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 90%, rgba(255, 107, 157, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: bgDrift 20s ease-in-out infinite;
+}
+
+@keyframes bgDrift {
+
+    0%,
+    100% {
+        filter: hue-rotate(0deg);
+    }
+
+    50% {
+        filter: hue-rotate(15deg);
+    }
+}
+
+/* ─── Trail Canvas ───────────────────────────────────── */
+#trail-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 900;
+}
+
+/* ─── Gesture Cursor ─────────────────────────────────── */
+.gesture-cursor {
+    position: fixed;
+    z-index: 999;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: opacity 0.2s;
+    display: none;
+}
+
+.gesture-cursor .cursor-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 245, 212, 0.5), 0 0 40px rgba(0, 245, 212, 0.2);
+    transition: all 0.1s;
+}
+
+.gesture-cursor .cursor-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 245, 212, 0.4);
+    transition: all 0.2s;
+}
+
+.gesture-cursor .cursor-label {
+    position: absolute;
+    top: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--cyan);
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
+    opacity: 0.8;
+}
+
+/* Cursor states */
+.gesture-cursor.pointing .cursor-dot {
+    background: var(--cyan);
+    width: 12px;
+    height: 12px;
+}
+
+.gesture-cursor.clicking .cursor-dot {
+    background: var(--pink);
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 0 40px rgba(255, 107, 157, 0.7);
+}
+
+.gesture-cursor.clicking .cursor-ring {
+    border-color: rgba(255, 107, 157, 0.6);
+    transform: scale(1.5);
+}
+
+.gesture-cursor.scrolling .cursor-dot {
+    background: var(--yellow);
+    box-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+}
+
+.gesture-cursor.scrolling .cursor-ring {
+    border-color: rgba(255, 217, 61, 0.4);
+}
+
+.gesture-cursor.grabbing .cursor-dot,
+.gesture-cursor.dragging .cursor-dot {
+    background: var(--orange);
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(255, 159, 28, 0.5);
+}
+
+.gesture-cursor.grabbing .cursor-ring,
+.gesture-cursor.dragging .cursor-ring {
+    border-color: rgba(255, 159, 28, 0.4);
+}
+
+.gesture-cursor.swiping .cursor-dot {
+    background: var(--purple);
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 0 30px rgba(123, 97, 255, 0.6);
+}
+
+.gesture-cursor.pinching .cursor-dot {
+    background: var(--green);
+}
+
+/* ─── Click Ripple ───────────────────────────────────── */
+.click-ripple {
+    position: fixed;
+    z-index: 998;
+    width: 60px;
+    height: 60px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid var(--pink);
+    animation: rippleExpand 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes rippleExpand {
+    0% {
+        width: 10px;
+        height: 10px;
+        opacity: 1;
+    }
+
+    100% {
+        width: 80px;
+        height: 80px;
+        opacity: 0;
+    }
+}
+
+/* ─── Swipe Indicator ────────────────────────────────── */
+.swipe-indicator {
+    position: fixed;
+    z-index: 998;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 80px;
+    font-weight: 900;
+    color: var(--purple);
+    text-shadow: 0 0 40px rgba(123, 97, 255, 0.6);
+    animation: swipeFade 0.8s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes swipeFade {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5);
+    }
+}
+
+/* ─── Layout ─────────────────────────────────────────── */
+.app-layout {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+}
+
+/* ─── Sidebar ────────────────────────────────────────── */
+.sidebar {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    background: rgba(8, 8, 24, 0.95);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(20px);
+}
+
+.sidebar-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--grad1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 30px rgba(0, 245, 212, 0.15);
+}
+
+.sidebar-header h1 {
+    font-size: 18px;
+    font-weight: 800;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.sidebar-header small {
+    font-size: 10px;
+    color: var(--text3);
+    display: block;
+}
+
+/* Mini Webcam */
+.mini-webcam-container {
+    margin: 16px 16px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 4/3;
+    border: 1px solid var(--glass-border);
+    background: #000;
+}
+
+.mini-webcam-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.mini-webcam-container canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    pointer-events: none;
+}
+
+.cam-controls {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px;
+}
+
+/* Gesture Info */
+.gesture-info {
+    padding: 16px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.gesture-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--glass-border);
+}
+
+.gesture-display .gi-icon {
+    font-size: 32px;
+}
+
+.gesture-display .gi-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cyan);
+}
+
+.gesture-display .gi-hint {
+    font-size: 11px;
+    color: var(--text3);
+}
+
+/* Status/FPS */
+.sidebar-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text2);
+    border-top: 1px solid var(--glass-border);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    transition: var(--transition);
+}
+
+.status-dot.live {
+    background: var(--green);
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+    animation: pulseDot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.fps-badge {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--yellow);
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: rgba(255, 217, 61, 0.08);
+    border: 1px solid rgba(255, 217, 61, 0.15);
+}
+
+/* Gesture Guide */
+.gesture-guide {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.gesture-guide h3 {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.guide-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    transition: var(--transition);
+}
+
+.guide-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.guide-icon {
+    font-size: 18px;
+    min-width: 28px;
+    text-align: center;
+}
+
+.guide-action {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.guide-how {
+    font-size: 10px;
+    color: var(--text3);
+}
+
+/* ─── Top Bar ────────────────────────────────────────── */
+.topbar {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(6, 6, 17, 0.8);
+    backdrop-filter: blur(20px);
+}
+
+.page-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.page-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: var(--transition);
+}
+
+.page-dot.active {
+    background: var(--cyan);
+    width: 28px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 245, 212, 0.4);
+}
+
+.page-dot:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.topbar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+}
+
+.topbar-hint {
+    font-size: 11px;
+    color: var(--text3);
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+}
+
+/* ─── Demo Content ───────────────────────────────────── */
+.demo-content {
+    grid-column: 2;
+    grid-row: 2;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 24px;
+    transition: background 0.5s;
+}
+
+.demo-page {
+    display: none;
+}
+
+.demo-page.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 900;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+}
+
+.page-subtitle {
+    font-size: 13px;
+    color: var(--text3);
+    margin-bottom: 24px;
+}
+
+/* ─── Widget Grid ────────────────────────────────────── */
+.widget-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.widget {
+    background: var(--card);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    transition: var(--transition);
+}
+
+.widget:hover {
+    border-color: var(--glass-hover);
+}
+
+.widget h3 {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Interactive hint */
+.gc-interactive {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.gc-interactive.gc-hovered {
+    box-shadow: 0 0 0 2px var(--cyan), 0 0 20px rgba(0, 245, 212, 0.15);
+}
+
+.gc-interactive.gc-clicked {
+    animation: clickFlash 0.3s ease;
+}
+
+@keyframes clickFlash {
+    0% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(1.5);
+    }
+
+    100% {
+        filter: brightness(1);
+    }
+}
+
+.gc-draggable {
+    transition: box-shadow 0.2s;
+}
+
+.gc-draggable.gc-being-dragged {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 2px var(--orange);
+}
+
+/* ─── Counter Widget ─────────────────────────────────── */
+.counter-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 800;
+    text-align: center;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 8px 0;
+}
+
+.counter-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.counter-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.counter-btn:hover {
+    background: var(--card-hover);
+    border-color: var(--glass-hover);
+}
+
+/* ─── Color Cards ────────────────────────────────────── */
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.color-card {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: var(--transition);
+}
+
+.color-card:hover {
+    transform: scale(1.05);
+}
+
+/* ─── Toggle Widget ──────────────────────────────────── */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.toggle-row:last-child {
+    border: none;
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.demo-toggle {
+    width: 48px;
+    height: 26px;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+    transition: var(--transition);
+}
+
+.demo-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: var(--transition);
+}
+
+.demo-toggle.on {
+    background: var(--cyan);
+}
+
+.demo-toggle.on::after {
+    left: 25px;
+}
+
+/* ─── Music Player ───────────────────────────────────── */
+.music-player {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.music-art {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: var(--grad2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    animation: none;
+}
+
+.music-player.playing .music-art {
+    animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.music-info {
+    flex: 1;
+}
+
+.music-title {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.music-artist {
+    font-size: 11px;
+    color: var(--text3);
+}
+
+.play-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--grad1);
+    color: #000;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.play-btn:hover {
+    box-shadow: 0 0 20px rgba(0, 245, 212, 0.3);
+}
+
+/* ─── Slider Widget ──────────────────────────────────── */
+.gc-slider {
+    position: relative;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 16px 0;
+}
+
+.gc-slider-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--grad1);
+    width: 40%;
+    transition: width 0.15s;
+}
+
+.gc-slider-thumb {
+    position: absolute;
+    top: 50%;
+    left: 40%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px rgba(0, 245, 212, 0.4);
+    transition: left 0.15s;
+}
+
+/* ─── Gallery ────────────────────────────────────────── */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.gallery-card {
+    aspect-ratio: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    transition: var(--transition);
+}
+
+.gallery-card:hover {
+    transform: scale(1.03);
+}
+
+.gallery-card .gallery-bg {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    transition: var(--transition);
+}
+
+.gallery-card .gallery-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 14px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ─── Info Cards ─────────────────────────────────────── */
+.info-card {
+    text-align: center;
+    padding: 28px 20px;
+}
+
+.info-icon {
+    font-size: 42px;
+    margin-bottom: 12px;
+}
+
+.info-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 800;
+    background: var(--grad1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.info-label {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+}
+
+/* ─── Buttons ────────────────────────────────────────── */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--grad1);
+    color: #000;
+    box-shadow: 0 3px 14px rgba(0, 245, 212, 0.2);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 5px 22px rgba(0, 245, 212, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-primary.active {
+    background: var(--grad2);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Toast ──────────────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast-success {
+    border-top: 2px solid var(--green);
+}
+
+.toast-error {
+    border-top: 2px solid var(--red);
+}
+
+.toast-info {
+    border-top: 2px solid var(--cyan);
+}
+
+/* ─── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 900px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .widget-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
